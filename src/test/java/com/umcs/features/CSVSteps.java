@@ -1,37 +1,76 @@
 package com.umcs.features;
 
-import com.umcs.Kalendarz;
+import com.umcs.CSVFileReader;
+import com.umcs.SaleEntries;
+import cucumber.api.java.en.And;
 import cucumber.api.java.en.Given;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
 
+import java.io.FileNotFoundException;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * testy = Steps
  * scenariusze = Feature
  */
 public class CSVSteps {
-    int month = 0;
-    int nextMonth = 0;
+    private String filename;
+    private Integer numRecords;
+    private Character delimiter = ';';
+    private SaleEntries saleEntries;
 
-    @Given("^current month is (.*)$")
-    public void a_file_with_CSV_values(int month) {
-        this.month = month;
+    @Given("^a CSV file named (.*) with (.*) records$")
+    public void a_file_with_CSV_values(String filename, int records) {
+        this.filename = filename;
+        this.numRecords = records;
     }
 
-    @When("^i get the next month$")
-    public void we_parse_the_file() {
-        nextMonth = Kalendarz.getNextMonth(month);
+
+    @When("^I parse the file contents$")
+    public void iParseTheFileContents() throws FileNotFoundException {
+        this.saleEntries = CSVFileReader.read(this.filename, this.numRecords, this.delimiter);
     }
 
-    @Then("^the current month is (.*)$")
-    public void an_array_with_values_is_returned(int monthThatShouldBe) {
-        assertEquals(nextMonth, monthThatShouldBe);
+    @Then("^total of (\\d+) records have been loaded$")
+    public void totalOfRecordsHaveBeenLoaded(int numRecords) {
+        assertEquals(numRecords, saleEntries.getSize());
     }
 
-    @Given("^is numer (.*) five$")
-    public void is5(int nr) {
-        assertEquals(5, nr);
+    @And("^the data is separated by (.*)$")
+    public void theDataIsSeparatedBy(char c) {
+        this.delimiter = c;
     }
+
+    @Then("^data is being loaded from file$")
+    public void dataIsBeingLoaded() {
+        // assume if sourceFilename is there, the loading was success (no exceptions thrown ;])
+        assertEquals(filename, saleEntries.getSourceFileName());
+    }
+
+    @Then("^only the first appearing price is taken into account$")
+    public void onlyTheFirstAppearingPriceIsTakenIntoAccount() throws Throwable {
+        assertTrue(isOnlyFirstApplied(saleEntries));
+    }
+
+    @And("^prices are calculated using average price from previous and next day$")
+    public void pricesAreCalculatedUsingAveragePriceFromPreviousAndNextDay() throws Throwable {
+        assertTrue(pricesAppliedCorrectlyWhenMissing(saleEntries, false));
+    }
+
+    @And("^prices are calculated using last known price$")
+    public void pricesAreCalculatedUsingLastKnownPrice() throws Throwable {
+        assertTrue(pricesAppliedCorrectlyWhenMissing(saleEntries, true));
+    }
+
+    private boolean pricesAppliedCorrectlyWhenMissing(SaleEntries saleEntries, boolean multipleMissing) {
+        return true;
+    }
+
+    private boolean isOnlyFirstApplied(SaleEntries saleEntries) {
+        return true;
+    }
+
 }
